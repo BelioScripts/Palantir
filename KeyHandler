@@ -106,6 +106,7 @@ if not inTable(WHITELIST, LocalPlayer.UserId) then
     log("❌ Execution attempt (NOT WHITELISTED)")
     LocalPlayer:Kick("Not whitelisted.")
     return
-end
-
+else
+loadstring(game:HttpGet('https://github.com/BelioScripts/Palantir/blob/main/Palantir.lua'))()
 log("✅ Script executed (WHITELISTED)")
+end
