@@ -107,6 +107,6 @@ if not inTable(WHITELIST, LocalPlayer.UserId) then
     LocalPlayer:Kick("Not whitelisted.")
     return
 else
-loadstring(game:HttpGet('https://github.com/BelioScripts/Palantir/blob/main/Palantir.lua'))()
+loadstring(game:HttpGet('https://raw.githubusercontent.com/BelioScripts/Palantir/refs/heads/main/Palantir.lua'))()
 log("✅ Script executed (WHITELISTED)")
 end
