@@ -1,4 +1,14 @@
-loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/refs/heads/main/Bypass.lua"))()
+--// =========================
+--// LINORIA LOAD
+--// =========================
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+assert(Library, "Failed to load Library.lua")
+
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
 --// =========================
 --// SERVICES
 --// =========================
@@ -8,24 +18,25 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local TextService = game:GetService("TextService")
 
 --// =========================
---// CONFIG / TEMPLATE
+--// CONFIG
 --// =========================
 getgenv().Settings = {
     PLAYERS = {
-        VICTIM = "371623432",
-        HELPER = "2905247264",
-        HELPERS_INGAME_NAME = "Nera Zeshi",
+        VICTIM = "",
+        HELPER = "",
+        HELPERS_INGAME_NAME = "",
     },
 
     VISUAL = {
         oldGuildName = "",
         newGuildName = "",
-        DisplayName = "zzz",
-        GUILD_ROLE = "Leader",
+        DisplayName = "",
+        GUILD_ROLE = "",
+
         BADGE_TOGGLES = {
             Bronze = false,
             DarkGoldRed = false,
-            Deep = true,
+            Deep = false,
             Gold = false,
             IronVow = false,
             Red = false,
@@ -33,274 +44,552 @@ getgenv().Settings = {
         },
 
         DETAILS = {
-            ["Leader"] = "Matty",
+            ["Leader"] = "",
             ["Old_Name"] = "",
-            ["Lieutenants"] = "1",
-            ["Officers"] = "7",
-            ["Overall Score"] = "746",
-            ["PvE Score"] = "826",
-            ["PvP Score"] = "-80",
-            ["Rooms"] = "9",
+            ["Lieutenants"] = "",
+            ["Officers"] = "",
+            ["Overall Score"] = "",
+            ["PvE Score"] = "",
+            ["PvP Score"] = "",
+            ["Rooms"] = "",
         },
     },
 
     SERVER = {
-        SERVER_AGE = "", -- leave empty to keep current value
-        SERVER_NAME = "Quick Jade Gremor ", -- leave empty to keep current value
-        SERVER_REGION = "", -- leave empty to keep current value
-        CHARACTER_SLOT = "2601791150:A|1 [Lv.1]", -- leave empty to keep current value
+        SERVER_NAME = "",
+        SERVER_REGION = "",
+        CHARACTER_SLOT = "",
     }
 }
 
 --// =========================
---// RESOLVE NAMES
+--// ORIGINAL VALUES STORAGE
 --// =========================
-local TARGET_INITIAL_TEXT
-local HOVER_TEXT
-if getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME then
-    TARGET_INITIAL_TEXT = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME
-end
-if getgenv().Settings.PLAYERS.VICTIM then
-    local success, name = pcall(function()
-        return Players:GetNameFromUserIdAsync(tonumber(getgenv().Settings.PLAYERS.VICTIM))
-    end)
-    if success then HOVER_TEXT = name end
-end
+local OriginalValues = {
+    HelperName = nil,
+    HelperDisplayName = nil,
+    LeaderboardNames = {},
+    GuildLabels = {},
+    GuildInfo = {Title = "", DescText = ""},
+    WorldUI = {ServerTitle = "", ServerRegion = "", Slot = ""}
+}
 
---// =========================
---// LEADERBOARD HOVER SPOOF
---// =========================
-local scrollingFrame = PlayerGui:FindFirstChild("LeaderboardGui") and PlayerGui.LeaderboardGui.MainFrame:FindFirstChild("ScrollingFrame")
-if scrollingFrame then
-    local function setupHover(frame)
-        if not (frame:IsA("Frame") and frame.Name == "PlayerFrame") then return end
-        local label = frame:FindFirstChild("Player")
-        if not (label and label:IsA("TextLabel")) then return end
-        if type(label.Text) ~= "string" then return end
-        if TARGET_INITIAL_TEXT and label.Text ~= TARGET_INITIAL_TEXT then return end
-
-        local originalText = label.Text
-        local hovering = false
-
-        frame.MouseEnter:Connect(function()
-            if label and type(HOVER_TEXT) == "string" then
-                hovering = true
-                label.Text = HOVER_TEXT
-            end
-        end)
-
-        frame.MouseLeave:Connect(function()
-            if label and type(originalText) == "string" then
-                hovering = false
-                label.Text = originalText
-            end
-        end)
-
-        label:GetPropertyChangedSignal("Text"):Connect(function()
-            if hovering and type(label.Text) == "string" and label.Text ~= HOVER_TEXT then
-                label.Text = HOVER_TEXT
-            end
-        end)
-    end
-
-    for _, child in ipairs(scrollingFrame:GetChildren()) do
-        setupHover(child)
-    end
-    scrollingFrame.ChildAdded:Connect(setupHover)
-end
-
---// =========================
---// GUILD TEXT SPOOFER
---// =========================
-local function isGuildLabel(obj)
-    return obj:IsA("TextLabel") and obj.Name == "Guild"
-end
-
-local function fixGuildText(label)
-    if typeof(label.Text) == "string" and getgenv().Settings.VISUAL.oldGuildName and getgenv().Settings.VISUAL.newGuildName then
-        label.Text = label.Text:gsub(getgenv().Settings.VISUAL.oldGuildName, getgenv().Settings.VISUAL.newGuildName)
-    end
-end
-
-local function monitorLabel(label)
-    fixGuildText(label)
-    label:GetPropertyChangedSignal("Text"):Connect(function()
-        fixGuildText(label)
-    end)
-end
-
-for _, obj in ipairs(game:GetDescendants()) do
-    if isGuildLabel(obj) then monitorLabel(obj) end
-end
-game.DescendantAdded:Connect(function(obj)
-    if isGuildLabel(obj) then monitorLabel(obj) end
-end)
-
---// =========================
---// HELPER / VICTIM VISUAL SPOOF
---// =========================
-if getgenv().Settings.PLAYERS.HELPER then
+-- Store original helper info
+if getgenv().Settings.PLAYERS.HELPER ~= "" then
     local success, helperName = pcall(function()
         return Players:GetNameFromUserIdAsync(tonumber(getgenv().Settings.PLAYERS.HELPER))
     end)
-    if success then
+    if success and helperName then
         local helper = Players:FindFirstChild(helperName)
         if helper then
-            local victimName = getgenv().Settings.PLAYERS.VICTIM and Players:GetNameFromUserIdAsync(tonumber(getgenv().Settings.PLAYERS.VICTIM)) or helper.Name
-            local chosenName = getgenv().Settings.VISUAL.DisplayName ~= "" and getgenv().Settings.VISUAL.DisplayName or helper.DisplayName
-
-            helper.Name = victimName or helper.Name
-            helper.DisplayName = chosenName or helper.DisplayName
-            if helper.Character and helper.Character:FindFirstChild("Humanoid") then
-                helper.Character.Humanoid.NameDisplayDistance = 0
-                helper.Character.Humanoid.DisplayName = chosenName or helper.Character.Humanoid.DisplayName
-            end
-
-            helper.CharacterAdded:Connect(function(char)
-                local hum = char:WaitForChild("Humanoid")
-                if hum then hum.DisplayName = chosenName or hum.DisplayName end
-            end)
+            OriginalValues.HelperName = helper.Name
+            OriginalValues.HelperDisplayName = helper.DisplayName
         end
     end
+end
+
+-- Store original leaderboard names & badges
+local leaderboardGui = PlayerGui:FindFirstChild("LeaderboardGui")
+if leaderboardGui then
+    local frame = leaderboardGui.MainFrame:FindFirstChild("ScrollingFrame")
+    if frame then
+        for _, entry in ipairs(frame:GetChildren()) do
+            if entry.Name == "PlayerFrame" then
+                local label = entry:FindFirstChild("Player")
+                if label then
+                    OriginalValues.LeaderboardNames[label] = label.Text
+                end
+            end
+        end
+    end
+end
+
+-- Store original guild labels
+for _, v in ipairs(game:GetDescendants()) do
+    if v:IsA("TextLabel") and v.Name == "Guild" then
+        OriginalValues.GuildLabels[v] = v.Text
+    end
+end
+
+-- Store original guild info panel
+if leaderboardGui then
+    local guildFrame = leaderboardGui.MainFrame:FindFirstChild("GuildInfo")
+    if guildFrame then
+        OriginalValues.GuildInfo.Title = guildFrame.Title.Text
+        OriginalValues.GuildInfo.DescText = guildFrame.DescSheet.Desc.Text
+    end
+end
+
+-- Store original world UI info
+local topbarGui = PlayerGui:FindFirstChild("TopbarGui")
+if topbarGui then
+    local info = topbarGui.Container.InfoFrame.ServerInfo
+    if info then
+        OriginalValues.WorldUI.ServerTitle = info.ServerTitle.Text
+        OriginalValues.WorldUI.ServerRegion = info.ServerRegion.Text
+    end
+    local slot = topbarGui.Container.InfoFrame.CharacterInfo:FindFirstChild("Slot")
+    if slot then
+        OriginalValues.WorldUI.Slot = slot.Text
+    end
+end
+
+--// =========================
+--// NAME RESOLUTION
+--// =========================
+local function resolveNames()
+    local targetInitial, hoverText
+
+    if getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME ~= "" then
+        targetInitial = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME
+    end
+
+    if getgenv().Settings.PLAYERS.VICTIM ~= "" then
+        pcall(function()
+            hoverText = Players:GetNameFromUserIdAsync(
+                tonumber(getgenv().Settings.PLAYERS.VICTIM)
+            )
+        end)
+    end
+
+    return targetInitial, hoverText
+end
+
+--// =========================
+--// LEADERBOARD HOVER
+--// =========================
+local function setupLeaderboardHover(targetInitial, hoverText)
+    local gui = PlayerGui:FindFirstChild("LeaderboardGui")
+    if not gui then return end
+
+    local frame = gui.MainFrame:FindFirstChild("ScrollingFrame")
+    if not frame then return end
+
+    local function hook(entry)
+        if entry.Name ~= "PlayerFrame" then return end
+        local label = entry:FindFirstChild("Player")
+        if not label then return end
+        if targetInitial and label.Text ~= targetInitial then return end
+
+        local original = label.Text
+        local hovering = false
+
+        entry.MouseEnter:Connect(function()
+            hovering = true
+            if hoverText then label.Text = hoverText end
+        end)
+
+        entry.MouseLeave:Connect(function()
+            hovering = false
+            label.Text = original
+        end)
+
+        label:GetPropertyChangedSignal("Text"):Connect(function()
+            if hovering and hoverText then
+                label.Text = hoverText
+            end
+        end)
+    end
+
+    for _, v in ipairs(frame:GetChildren()) do hook(v) end
+    frame.ChildAdded:Connect(hook)
+end
+
+--// =========================
+--// GUILD TEXT SPOOF
+--// =========================
+local function setupGuildTextSpoof()
+    local function apply(label)
+        if label:IsA("TextLabel")
+        and label.Name == "Guild"
+        and getgenv().Settings.VISUAL.oldGuildName ~= ""
+        then
+            label.Text = label.Text:gsub(
+                getgenv().Settings.VISUAL.oldGuildName,
+                getgenv().Settings.VISUAL.newGuildName
+            )
+        end
+    end
+
+    for _, v in ipairs(game:GetDescendants()) do apply(v) end
+    game.DescendantAdded:Connect(apply)
+end
+
+--// =========================
+--// HELPER VISUAL SPOOF
+--// =========================
+local function setupHelperVisual()
+    if getgenv().Settings.PLAYERS.HELPER == "" then return end
+
+    local helperName
+    pcall(function()
+        helperName = Players:GetNameFromUserIdAsync(
+            tonumber(getgenv().Settings.PLAYERS.HELPER)
+        )
+    end)
+
+    local helper = Players:FindFirstChild(helperName or "")
+    if not helper then return end
+
+    local victimName
+    pcall(function()
+        victimName = Players:GetNameFromUserIdAsync(
+            tonumber(getgenv().Settings.PLAYERS.VICTIM)
+        )
+    end)
+
+    helper.Name = victimName or helper.Name
+    helper.DisplayName = getgenv().Settings.VISUAL.DisplayName
+
+    local function applyChar(char)
+        local hum = char:WaitForChild("Humanoid", 3)
+        if hum then
+            hum.DisplayName = getgenv().Settings.VISUAL.DisplayName
+            hum.NameDisplayDistance = 0
+        end
+    end
+
+    if helper.Character then applyChar(helper.Character) end
+    helper.CharacterAdded:Connect(applyChar)
 end
 
 --// =========================
 --// GUILD INFO SPOOF
 --// =========================
-local LeaderboardUI = PlayerGui:FindFirstChild("LeaderboardGui")
-local guildInfoFrame = LeaderboardUI and LeaderboardUI.MainFrame:FindFirstChild("GuildInfo")
-if guildInfoFrame then
-    guildInfoFrame:GetPropertyChangedSignal("Visible"):Connect(function()
-        if not guildInfoFrame.Visible then return end
-        if getgenv().Settings.VISUAL.GUILD_ROLE then
-            guildInfoFrame.Title.Text = getgenv().Settings.VISUAL.GUILD_ROLE
+local function setupGuildInfo()
+    local gui = PlayerGui:FindFirstChild("LeaderboardGui")
+    if not gui then return end
+
+    local frame = gui.MainFrame:FindFirstChild("GuildInfo")
+    if not frame then return end
+
+    frame:GetPropertyChangedSignal("Visible"):Connect(function()
+        if not frame.Visible then return end
+
+        frame.Title.Text = getgenv().Settings.VISUAL.GUILD_ROLE
+
+        local lines = {}
+        for k, v in pairs(getgenv().Settings.VISUAL.DETAILS) do
+            table.insert(lines, "<b>"..k.."</b>: "..v)
         end
 
-        if getgenv().Settings.VISUAL.DETAILS then
-            local details = {}
-            for name, value in pairs(getgenv().Settings.VISUAL.DETAILS) do
-                details[#details + 1] = string.format("<b>%s</b>: %s", name, value)
-            end
-            table.sort(details)
-            guildInfoFrame.DescSheet.Desc.RichText = true
-            guildInfoFrame.DescSheet.Desc.Text = table.concat(details, "\n")
-        end
+        table.sort(lines)
+        frame.DescSheet.Desc.RichText = true
+        frame.DescSheet.Desc.Text = table.concat(lines, "\n")
     end)
 end
 
 --// =========================
 --// BADGE INJECTION
 --// =========================
-local BadgeSource = PlayerGui:FindFirstChild("LeaderboardGui") and PlayerGui.LeaderboardGui:FindFirstChild("LeaderboardClient")
+local function setupBadgeInjection()
+    local gui = PlayerGui:FindFirstChild("LeaderboardGui")
+    if not gui then return end
 
-local function getEnabledBadge()
-    if not getgenv().Settings.VISUAL.BADGE_TOGGLES or not BadgeSource then return end
-    for name, enabled in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
-        if enabled then
-            return BadgeSource:FindFirstChild(name)
+    local source = gui:FindFirstChild("LeaderboardClient")
+    local list = gui.MainFrame:FindFirstChild("ScrollingFrame")
+    if not source or not list then return end
+
+    local helperName = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME
+    if not helperName or helperName == "" then return end
+
+    local function getBadge()
+        for k, v in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
+            if v then return source:FindFirstChild(k) end
         end
     end
-end
 
-local function cloneBadgeIntoPlayer(label)
-    if not (label and label:IsA("TextLabel")) then return end
-    if label:FindFirstChild("InjectedBadge") then return end
-    local badgeTemplate = getEnabledBadge()
-    if not badgeTemplate then return end
-    local badge = badgeTemplate:Clone()
-    badge.Name = "InjectedBadge"
-    badge.Parent = label
-end
+    local function apply(frame)
+        if frame.Name ~= "PlayerFrame" then return end
+        local label = frame:FindFirstChild("Player")
+        if not label then return end
 
-if scrollingFrame then
-    for _, child in ipairs(scrollingFrame:GetChildren()) do
-        if child:IsA("Frame") and child.Name == "PlayerFrame" then
-            local label = child:FindFirstChild("Player")
-            if label and (not TARGET_INITIAL_TEXT or label.Text == TARGET_INITIAL_TEXT) then
-                cloneBadgeIntoPlayer(label)
-            end
+        if label.Text ~= helperName then return end
+
+        local old = label:FindFirstChild("InjectedBadge")
+        if old then old:Destroy() end
+
+        local badge = getBadge()
+        if badge then
+            local c = badge:Clone()
+            c.Name = "InjectedBadge"
+            c.Parent = label
         end
     end
-    scrollingFrame.ChildAdded:Connect(function(child)
-        if child:IsA("Frame") and child.Name == "PlayerFrame" then
-            local label = child:FindFirstChild("Player")
-            if label and (not TARGET_INITIAL_TEXT or label.Text == TARGET_INITIAL_TEXT) then
-                cloneBadgeIntoPlayer(label)
-            end
-        end
-    end)
+
+    for _, v in ipairs(list:GetChildren()) do apply(v) end
+    list.ChildAdded:Connect(apply)
 end
 
 --// =========================
---// WORLDUI / SERVER INFO SPOOF
+--// EXCLUSIVE BADGE TOGGLE
 --// =========================
-local WorldUI = PlayerGui:FindFirstChild("TopbarGui") and PlayerGui.TopbarGui:FindFirstChild("Container")
-if WorldUI then
-    local function refreshRegion()
-        local Title1 = WorldUI.InfoFrame.ServerInfo:FindFirstChild("ServerTitle")
-        local Title2 = WorldUI.InfoFrame.ServerInfo:FindFirstChild("ServerRegion")
-        local PingIcon = Title2 and Title2:FindFirstChild("PingIcon")
+local function setExclusiveBadge(name)
+    for k in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
+        getgenv().Settings.VISUAL.BADGE_TOGGLES[k] = (k == name)
+    end
+    setupBadgeInjection()
+end
 
-        if Title1 and Title2 then
-            local titleSize1 = TextService:GetTextSize(Title1.Text, Title1.TextSize, Title1.Font, Vector2.new(1000,18))
-            local titleSize2 = TextService:GetTextSize(Title2.Text, Title2.TextSize, Title2.Font, Vector2.new(1000,18))
-            local max = math.max(titleSize1.X, titleSize2.X)
+local function clearAllBadges()
+    for k in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
+        getgenv().Settings.VISUAL.BADGE_TOGGLES[k] = false
+    end
+    setupBadgeInjection()
+end
 
-            Title1.Size = UDim2.new(0, titleSize1.X + 5, 0, 18)
-            Title2.Size = UDim2.new(0, titleSize2.X + 3, 0, 18)
-            WorldUI.InfoFrame.ServerInfo.Size = UDim2.new(0, max + 40, 0, 18)
+--// =========================
+--// WORLD UI SPOOF
+--// =========================
+local function setupWorldUI()
+    local ui = PlayerGui:FindFirstChild("TopbarGui")
+    if not ui then return end
 
-            if PingIcon then
-                PingIcon.Position = UDim2.new(0, Title2.Position.X.Offset + Title2.Size.X.Offset + 5, PingIcon.Position.Y.Scale, PingIcon.Position.Y.Offset)
-            end
-        end
+    local info = ui.Container.InfoFrame.ServerInfo
+
+    if getgenv().Settings.SERVER.SERVER_NAME ~= "" then
+        info.ServerTitle.Text = getgenv().Settings.SERVER.SERVER_NAME
     end
 
-    -- Server Age
-    if getgenv().Settings.SERVER.SERVER_AGE and getgenv().Settings.SERVER.SERVER_AGE ~= "" then
-        WorldUI.InfoFrame.ServerInfo.ServerAge.Text = getgenv().Settings.SERVER.SERVER_AGE
-        WorldUI.InfoFrame.ServerInfo.ServerAge:GetPropertyChangedSignal("Text"):Connect(function()
-            if WorldUI.InfoFrame.ServerInfo.ServerAge.Text ~= getgenv().Settings.SERVER.SERVER_AGE then
-                WorldUI.InfoFrame.ServerInfo.ServerAge.Text = getgenv().Settings.SERVER.SERVER_AGE
-            end
+    if getgenv().Settings.SERVER.SERVER_REGION ~= "" then
+        info.ServerRegion.Text = getgenv().Settings.SERVER.SERVER_REGION
+    end
+
+    local slot = ui.Container.InfoFrame.CharacterInfo:FindFirstChild("Slot")
+    if slot and getgenv().Settings.SERVER.CHARACTER_SLOT ~= "" then
+        slot.Text = getgenv().Settings.SERVER.CHARACTER_SLOT
+    end
+end
+
+--// =========================
+--// APPLY ALL
+--// =========================
+local function ApplyAll()
+    local t, h = resolveNames()
+    setupLeaderboardHover(t, h)
+    setupGuildTextSpoof()
+    setupHelperVisual()
+    setupGuildInfo()
+    setupBadgeInjection()
+    setupWorldUI()
+end
+
+--// =========================
+--// REMOVE ALL SPOOFING
+--// =========================
+local function RemoveAllSpoofing()
+    -- Restore helper
+    if getgenv().Settings.PLAYERS.HELPER ~= "" then
+        local helperName
+        pcall(function()
+            helperName = Players:GetNameFromUserIdAsync(tonumber(getgenv().Settings.PLAYERS.HELPER))
         end)
-    end
-
-    -- Server Name
-    if getgenv().Settings.SERVER.SERVER_NAME and getgenv().Settings.SERVER.SERVER_NAME ~= "" then
-        local Title = WorldUI.InfoFrame.ServerInfo:FindFirstChild("ServerTitle")
-        if Title then
-            Title.Text = getgenv().Settings.SERVER.SERVER_NAME
-            refreshRegion()
-            Title:GetPropertyChangedSignal("Text"):Connect(function()
-                if Title.Text ~= getgenv().Settings.SERVER.SERVER_NAME then
-                    Title.Text = getgenv().Settings.SERVER.SERVER_NAME
+        local helper = Players:FindFirstChild(helperName or "")
+        if helper then
+            helper.Name = OriginalValues.HelperName or helper.Name
+            helper.DisplayName = OriginalValues.HelperDisplayName or helper.DisplayName
+            if helper.Character then
+                local hum = helper.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.DisplayName = OriginalValues.HelperDisplayName or helper.DisplayName
+                    hum.NameDisplayDistance = 100
                 end
-                refreshRegion()
-            end)
+            end
         end
     end
 
-    -- Server Region
-    if getgenv().Settings.SERVER.SERVER_REGION and getgenv().Settings.SERVER.SERVER_REGION ~= "" then
-        local Title = WorldUI.InfoFrame.ServerInfo:FindFirstChild("ServerRegion")
-        if Title then
-            Title.Text = getgenv().Settings.SERVER.SERVER_REGION
-            refreshRegion()
-            Title:GetPropertyChangedSignal("Text"):Connect(function()
-                if Title.Text ~= getgenv().Settings.SERVER.SERVER_REGION then
-                    Title.Text = getgenv().Settings.SERVER.SERVER_REGION
-                end
-                refreshRegion()
-            end)
+    -- Restore leaderboard names
+    for label, text in pairs(OriginalValues.LeaderboardNames) do
+        if label and label.Parent then
+            label.Text = text
+            local oldBadge = label:FindFirstChild("InjectedBadge")
+            if oldBadge then oldBadge:Destroy() end
         end
     end
 
-    -- Character Slot
-    if getgenv().Settings.SERVER.CHARACTER_SLOT and getgenv().Settings.SERVER.CHARACTER_SLOT ~= "" then
-        local SlotLabel = WorldUI.InfoFrame:FindFirstChild("CharacterInfo") and WorldUI.InfoFrame.CharacterInfo:FindFirstChild("Slot")
-        if SlotLabel then
-            SlotLabel.Text = getgenv().Settings.SERVER.CHARACTER_SLOT
+    -- Restore guild labels
+    for label, text in pairs(OriginalValues.GuildLabels) do
+        if label and label.Parent then
+            label.Text = text
+        end
+    end
+
+    -- Restore guild info panel
+    local gui = PlayerGui:FindFirstChild("LeaderboardGui")
+    if gui then
+        local frame = gui.MainFrame:FindFirstChild("GuildInfo")
+        if frame then
+            frame.Title.Text = OriginalValues.GuildInfo.Title
+            frame.DescSheet.Desc.Text = OriginalValues.GuildInfo.DescText
+        end
+    end
+
+    -- Restore world UI
+    local ui = PlayerGui:FindFirstChild("TopbarGui")
+    if ui then
+        local info = ui.Container.InfoFrame.ServerInfo
+        if info then
+            info.ServerTitle.Text = OriginalValues.WorldUI.ServerTitle
+            info.ServerRegion.Text = OriginalValues.WorldUI.ServerRegion
+        end
+        local slot = ui.Container.InfoFrame.CharacterInfo:FindFirstChild("Slot")
+        if slot then
+            slot.Text = OriginalValues.WorldUI.Slot
         end
     end
 end
+
+--// =========================
+--// UI
+--// =========================
+local Window = Library:CreateWindow({
+    Title = 'Palantir V6',
+    Center = true,
+    AutoShow = true
+})
+
+local MainTab = Window:AddTab('Main')
+local UISettingsTab = Window:AddTab('UI Settings')
+
+-- Players
+local PlayersGroup = MainTab:AddLeftGroupbox('Players')
+PlayersGroup:AddInput('Victim', {
+    Text = 'Victim UserID',
+    Default = getgenv().Settings.PLAYERS.VICTIM,
+    Callback = function(v)
+        getgenv().Settings.PLAYERS.VICTIM = v
+    end
+})
+
+PlayersGroup:AddInput('Helper', {
+    Text = 'Helper UserID',
+    Default = getgenv().Settings.PLAYERS.HELPER,
+    Callback = function(v)
+        getgenv().Settings.PLAYERS.HELPER = v
+    end
+})
+
+PlayersGroup:AddInput('HelperName', {
+    Text = 'Helper Ingame Name',
+    Default = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME,
+    Callback = function(v)
+        getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME = v
+    end
+})
+
+-- Visual
+local VisualGroup = MainTab:AddLeftGroupbox('Visual')
+VisualGroup:AddInput('OldGuild', {
+    Text = 'Old Guild Name',
+    Default = getgenv().Settings.VISUAL.oldGuildName,
+    Callback = function(v)
+        getgenv().Settings.VISUAL.oldGuildName = v
+    end
+})
+VisualGroup:AddInput('NewGuild', {
+    Text = 'New Guild Name',
+    Default = getgenv().Settings.VISUAL.newGuildName,
+    Callback = function(v)
+        getgenv().Settings.VISUAL.newGuildName = v
+    end
+})
+VisualGroup:AddInput('DisplayName', {
+    Text = 'Display Name',
+    Default = getgenv().Settings.VISUAL.DisplayName,
+    Callback = function(v)
+        getgenv().Settings.VISUAL.DisplayName = v
+    end
+})
+VisualGroup:AddDropdown('GuildRole', {
+    Text = 'Guild Role',
+    Values = { "Leader", "Lieutenant", "Officer", "Member" },
+    Default = 1,
+    Callback = function(v)
+        getgenv().Settings.VISUAL.GUILD_ROLE = v
+    end
+})
+for Badge in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
+    VisualGroup:AddToggle(Badge, {
+        Text = Badge,
+        Default = false,
+        Callback = function(v)
+            if v then
+                setExclusiveBadge(Badge)
+            else
+                clearAllBadges()
+            end
+        end
+    })
+end
+
+-- Server
+local ServerGroup = MainTab:AddRightGroupbox('Server')
+for k in pairs(getgenv().Settings.SERVER) do
+    ServerGroup:AddInput(k, {
+        Text = k,
+        Default = getgenv().Settings.SERVER[k],
+        Callback = function(v)
+            getgenv().Settings.SERVER[k] = v
+        end
+    })
+end
+
+-- Manual Apply Button
+local ApplyGroup = MainTab:AddRightGroupbox('Apply')
+ApplyGroup:AddButton('Apply Spoof', function()
+    ApplyAll()
+end)
+
+-- UI Settings Tab
+local MenuGroup = UISettingsTab:AddLeftGroupbox('Menu')
+MenuGroup:AddButton('Unload', function()
+    RemoveAllSpoofing()
+    Library:Unload()
+end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
+    Default = 'End',
+    NoUI = true,
+    Text = 'Menu Keybind'
+})
+Library.ToggleKeybind = Options.MenuKeybind
+
+--// =========================
+--// THEME & SAVE MANAGER
+--// =========================
+ThemeManager:SetLibrary(Library)
+
+-- Override theme directly (Palantir look)
+local PalantirTheme = {
+    TextColor = Color3.fromRGB(220, 225, 235),
+    TextOutline = Color3.fromRGB(0, 0, 0),
+    Background = Color3.fromRGB(16, 18, 22),
+    MainColor = Color3.fromRGB(22, 25, 30),
+    TabBackground = Color3.fromRGB(18, 21, 26),
+    SectionBackground = Color3.fromRGB(24, 28, 34),
+    BorderColor = Color3.fromRGB(45, 52, 62),
+    AccentColor = Color3.fromRGB(70, 140, 200),
+    AccentColorDark = Color3.fromRGB(45, 100, 160),
+    ButtonBackground = Color3.fromRGB(30, 35, 42),
+    ButtonTextColor = Color3.fromRGB(220, 225, 235),
+    ToggleEnabled = Color3.fromRGB(70, 140, 200),
+    ToggleDisabled = Color3.fromRGB(55, 60, 70),
+    SliderBackground = Color3.fromRGB(30, 35, 42),
+    SliderFill = Color3.fromRGB(70, 140, 200),
+    InputBackground = Color3.fromRGB(26, 30, 36),
+    DropdownBackground = Color3.fromRGB(26, 30, 36),
+    DropdownBorder = Color3.fromRGB(45, 52, 62)
+}
+
+for k, v in pairs(PalantirTheme) do
+    pcall(function() ThemeManager.Theme[k] = v end)
+end
+
+ThemeManager:SetFolder('Palantir')
+ThemeManager:ApplyToTab(UISettingsTab)
+
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+SaveManager:SetFolder('Palantir/Configs')
+SaveManager:BuildConfigSection(UISettingsTab)
+SaveManager:LoadAutoloadConfig()
