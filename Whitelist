@@ -1,7 +1,6 @@
 -- Whitelist.lua
 return {
-    version = 1,
     users = {
-        2905247264,
+       2905247264,
     }
 }
