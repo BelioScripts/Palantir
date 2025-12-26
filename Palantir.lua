@@ -1,3 +1,5 @@
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/refs/heads/main/Bypass.lua"))()
 --// =========================
 --// LINORIA LOAD
 --// =========================
