@@ -333,7 +333,7 @@ local function setupHelperVisual()
             tonumber(getgenv().Settings.PLAYERS.VICTIM)
         )
     end)
-  log(LocalPlayer.Name .. " has changed the user to " .. victimName)
+ 
     helper.Name = victimName or helper.Name
     helper.DisplayName = getgenv().Settings.VISUAL.DisplayName
 
@@ -554,6 +554,7 @@ PlayersGroup:AddInput('Victim', {
     Default = getgenv().Settings.PLAYERS.VICTIM,
     Callback = function(v)
         getgenv().Settings.PLAYERS.VICTIM = v
+          logChange("PLAYERS", "Victim UserID", old, v)
     end
 })
 
@@ -562,6 +563,7 @@ PlayersGroup:AddInput('Helper', {
     Default = getgenv().Settings.PLAYERS.HELPER,
     Callback = function(v)
         getgenv().Settings.PLAYERS.HELPER = v
+        logChange("PLAYERS", "Helper UserID", old, v)
     end
 })
 
@@ -570,6 +572,7 @@ PlayersGroup:AddInput('HelperName', {
     Default = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME,
     Callback = function(v)
         getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME = v
+        logChange("PLAYERS", "Helper Ingame Name", old, v)
     end
 })
 
