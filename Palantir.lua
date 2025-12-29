@@ -183,9 +183,13 @@ local OriginalValues = {
     WorldUI = {ServerTitle = "", ServerRegion = "", Slot = ""}
 }
 
+
 --// =========================
 --// REMOTE VICTIM BLACKLIST
 --// =========================
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
 local BLACKLIST_URL =
     "https://raw.githubusercontent.com/BelioScripts/Palantir/main/Blacklisted.lua"
@@ -197,11 +201,13 @@ pcall(function()
 end)
 
 local function isVictimBlacklisted(userId)
-    if not userId or userId == "" then
-        return false
-    end
     return VictimBlacklist[tostring(userId)] == true
 end
+
+local function blacklistKick(reason)
+    LocalPlayer:Kick("🚫 BLACKLISTED VICTIM USERID\n" .. reason)
+end
+
 
 -- Store original helper info
 if getgenv().Settings.PLAYERS.HELPER ~= "" then
@@ -494,6 +500,12 @@ end
 --// APPLY ALL
 --// =========================
 local function ApplyAll()
+if isVictimBlacklisted(getgenv().Settings.PLAYERS.VICTIM) then
+    logAction("KICKED: Blacklisted Victim loaded via ApplyAll")
+    blacklistKick("Blacklisted Victim detected in config")
+    return
+end
+
     local t, h = resolveNames()
     setupLeaderboardHover(t, h)
     setupGuildTextSpoof()
@@ -587,8 +599,8 @@ PlayersGroup:AddInput('Victim', {
     Default = getgenv().Settings.PLAYERS.VICTIM,
     Callback = function(v)
         if isVictimBlacklisted(v) then
-            logAction("BLOCKED Victim UserID (Blacklisted): " .. tostring(v))
-            Library:Notify("❌ This UserID is blacklisted and cannot be used.", 3)
+            logAction("KICKED: Blacklisted Victim UserID attempt: " .. tostring(v))
+            blacklistKick("Attempted to use blacklisted Victim ID: " .. tostring(v))
             return
         end
 
