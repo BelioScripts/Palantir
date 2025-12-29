@@ -157,7 +157,19 @@ local function log(action)
         Body = HttpService:JSONEncode(payload)
     })
 end
+local function logChange(category, key, oldValue, newValue)
+    log(string.format(
+        "[%s] %s changed from '%s' to '%s'",
+        category,
+        key,
+        tostring(oldValue),
+        tostring(newValue)
+    ))
+end
 
+local function logAction(action)
+    log("[ACTION] " .. action)
+end
 --// =========================
 --// ORIGINAL VALUES STORAGE
 --// =========================
