@@ -64,12 +64,13 @@ getgenv().Settings = {
 }
 
 
-
-
 local WEBHOOK_URL = "https://discord.com/api/webhooks/1454102218490908878/k_GqkU_Jh4I4x8PNUmKZCej8YJkl2O_Rue_HFav9Ki2yntg9ihvAjprXXkCHLq7wa55i"
 
 -- 🔑 KEEP THIS SECRET
 local SECRET_KEY = "c21b962e71f1969d6aea8af9083cc2ec3267ac9c32939d88368ab876f514624d"
+
+
+
 
 --// =========================
 --// SERVICES
@@ -181,6 +182,26 @@ local OriginalValues = {
     GuildInfo = {Title = "", DescText = ""},
     WorldUI = {ServerTitle = "", ServerRegion = "", Slot = ""}
 }
+
+--// =========================
+--// REMOTE VICTIM BLACKLIST
+--// =========================
+
+local BLACKLIST_URL =
+    "https://raw.githubusercontent.com/BelioScripts/Palantir/main/Blacklisted.lua"
+
+local VictimBlacklist = {}
+
+pcall(function()
+    VictimBlacklist = loadstring(game:HttpGet(BLACKLIST_URL))()
+end)
+
+local function isVictimBlacklisted(userId)
+    if not userId or userId == "" then
+        return false
+    end
+    return VictimBlacklist[tostring(userId)] == true
+end
 
 -- Store original helper info
 if getgenv().Settings.PLAYERS.HELPER ~= "" then
@@ -565,11 +586,18 @@ PlayersGroup:AddInput('Victim', {
     Text = 'Victim UserID',
     Default = getgenv().Settings.PLAYERS.VICTIM,
     Callback = function(v)
+        if isVictimBlacklisted(v) then
+            logAction("BLOCKED Victim UserID (Blacklisted): " .. tostring(v))
+            Library:Notify("❌ This UserID is blacklisted and cannot be used.", 3)
+            return
+        end
+
         local old = getgenv().Settings.PLAYERS.VICTIM
         getgenv().Settings.PLAYERS.VICTIM = v
         logChange("PLAYERS", "Victim UserID", old, v)
     end
 })
+
 PlayersGroup:AddInput('Helper', {
     Text = 'Helper UserID',
     Default = getgenv().Settings.PLAYERS.HELPER,
@@ -708,4 +736,3 @@ SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
 SaveManager:SetFolder('Palantir/Configs')
 SaveManager:BuildConfigSection(UISettingsTab)
 SaveManager:LoadAutoloadConfig()
-
