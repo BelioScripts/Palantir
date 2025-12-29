@@ -2,5 +2,5 @@
 -- UserIds MUST be strings
 
 return {
-    [""] = true,     
+    ["10206017657"] = true,     
 }
