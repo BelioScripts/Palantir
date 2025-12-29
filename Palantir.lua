@@ -333,7 +333,7 @@ local function setupHelperVisual()
             tonumber(getgenv().Settings.PLAYERS.VICTIM)
         )
     end)
-
+  log(LocalPlayer.Name .. " has changed the user to " .. victimName)
     helper.Name = victimName or helper.Name
     helper.DisplayName = getgenv().Settings.VISUAL.DisplayName
 
@@ -689,4 +689,4 @@ SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
 SaveManager:SetFolder('Palantir/Configs')
 SaveManager:BuildConfigSection(UISettingsTab)
 SaveManager:LoadAutoloadConfig()
-log('test 67')
+
