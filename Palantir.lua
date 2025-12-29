@@ -540,6 +540,7 @@ end
 local ApplyGroup = MainTab:AddRightGroupbox('Apply')
 ApplyGroup:AddButton('Apply Spoof', function()
     ApplyAll()
+    log("test")
 end)
 
 -- UI Settings Tab
