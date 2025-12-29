@@ -558,7 +558,7 @@ local Window = Library:CreateWindow({
 
 local MainTab = Window:AddTab('Main')
 local UISettingsTab = Window:AddTab('UI Settings')
-
+local PlayersGroup = MainTab:AddLeftGroupbox('Players')
 -- Players
 PlayersGroup:AddInput('Victim', {
     Text = 'Victim UserID',
