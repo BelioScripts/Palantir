@@ -1,2 +1,2 @@
 # Palantir
-i hate ngigers were false banning all the opps
+Yes i love skidding
